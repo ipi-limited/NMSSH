@@ -114,6 +114,28 @@
 // -----------------------------------------------------------------------------
 
 - (NSArray *)hostIPAddresses {
+
+    // Add an explicit check for a numeric IP4 address as RoadAngel
+    // host IP resolves as IP6 for some reason
+
+    BOOL is_numeric = YES;
+    for (int i = 0; i < _host.length; i++) {
+        char c = [_host characterAtIndex:i];
+        if (c != '.' && !isdigit(c)) {
+            is_numeric = NO;
+            break;
+        }
+    }
+
+    if (is_numeric) {
+        struct sockaddr_in addr;
+        addr.sin_len = sizeof(addr);
+        addr.sin_family = AF_INET;
+        inet_pton(AF_INET, [_host UTF8String], &addr.sin_addr);
+        NSData *data = [NSData dataWithBytes:&addr length:sizeof(addr)];
+        return @[data];
+    }
+
     NSArray *hostComponents = [_host componentsSeparatedByString:@":"];
     NSInteger components = [hostComponents count];
     NSString *address = hostComponents[0];
